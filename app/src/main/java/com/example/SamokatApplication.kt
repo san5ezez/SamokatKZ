@@ -15,12 +15,15 @@ class SamokatApplication : Application() {
       return
     }
 
-    val apiKey = BuildConfig.YANDEX_MAPKIT_API_KEY
+    val apiKey =
+      BuildConfig.YANDEX_MAPKIT_API_KEY
+        .trim()
+        .removeSurrounding("\"")
+        .removeSurrounding("'")
     val hasRealKey = apiKey.isNotBlank() && apiKey != "YOUR_YANDEX_MAPKIT_API_KEY"
     runCatching {
       if (apiKey.isNotBlank()) {
         MapKitFactory.setApiKey(apiKey)
-        MapKitFactory.setLocale("ru_RU")
         MapKitFactory.initialize(this)
       }
       isMapKitConfigured = hasRealKey

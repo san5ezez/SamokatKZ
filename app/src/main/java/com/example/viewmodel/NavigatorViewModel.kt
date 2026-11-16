@@ -380,6 +380,12 @@ class NavigatorViewModel(application: Application) : AndroidViewModel(applicatio
     viewModelScope.launch { preferencesRepository.setThemePreference(theme) }
   }
 
+  fun onMapTilesLoaded() {
+    if (!_uiState.value.mapTilesLoaded) {
+      _uiState.update { it.copy(mapTilesLoaded = true) }
+    }
+  }
+
   private fun inferSpeedZone(state: NavigatorUiState): SpeedLimitZone {
     val selected = state.selectedRoute ?: return SpeedLimitZone.BIKE_LANE
     val hasOnlyPedestrian =
@@ -397,7 +403,7 @@ class NavigatorViewModel(application: Application) : AndroidViewModel(applicatio
   ): List<String> {
     val alerts = mutableListOf<String>()
     if (currentSpeedKmh > zone.maxSpeedKmh) {
-      alerts.add("Превышение лимита ПДД РК: снизьте скорость до ${zone.maxSpeedKmh} км/ч!")
+      alerts.add("Превышение ${zone.maxSpeedKmh} км/ч по ПДД РК — снизьте скорость")
     }
     when (rideMode) {
       RideMode.FULL_LEGAL -> {

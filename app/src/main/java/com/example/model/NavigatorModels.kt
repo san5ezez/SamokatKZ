@@ -131,6 +131,7 @@ data class NavigatorUiState(
   val currentSpeedKmh: Int = 0,
   val pddAlerts: List<String> = emptyList(),
   val isMapKitKeyConfigured: Boolean = true,
+  val mapTilesLoaded: Boolean = false,
   val cameraActionNonce: Long = 0L,
   val cameraTarget: Point? = null,
   val cameraZoomDelta: Float? = null,

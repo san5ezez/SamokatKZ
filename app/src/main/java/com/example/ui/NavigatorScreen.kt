@@ -121,6 +121,7 @@ fun NavigatorScreen(
         onMapLongTap = viewModel::onMapLongTap,
         onVisibleRegionChanged = viewModel::updateVisibleRegion,
         onRouteTapped = viewModel::onRouteOptionSelected,
+        onMapTilesLoaded = viewModel::onMapTilesLoaded,
         modifier = Modifier.fillMaxSize(),
       )
 

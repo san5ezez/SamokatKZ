@@ -46,8 +46,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.delay
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -298,11 +304,23 @@ fun TopHudOverlay(
     // 3. Индикатор скорости ПДД РК (25 / 6 км/ч) и предупреждения на экране
     PddSpeedLimitBanner(uiState = uiState)
 
-    // 4. Предупреждение о настройке API-ключа (если в Secrets оставлен шаблон)
-    if (!uiState.isMapKitKeyConfigured) {
+    // 4. Диагностика API-ключа и загрузки тайлов карты (если через 6 сек тайлы не появились)
+    var showTileTimeoutWarning by remember { mutableStateOf(false) }
+    LaunchedEffect(uiState.mapTilesLoaded, uiState.isMapKitKeyConfigured) {
+      if (uiState.mapTilesLoaded) {
+        showTileTimeoutWarning = false
+      } else {
+        delay(6_000L)
+        if (!uiState.mapTilesLoaded) {
+          showTileTimeoutWarning = true
+        }
+      }
+    }
+
+    if (!uiState.isMapKitKeyConfigured || showTileTimeoutWarning) {
       Surface(
         shape = RoundedCornerShape(12.dp),
-        color = ShortcutAmber.copy(alpha = 0.92f),
+        color = ShortcutAmber.copy(alpha = 0.94f),
         shadowElevation = 3.dp,
       ) {
         Row(
@@ -317,7 +335,12 @@ fun TopHudOverlay(
             modifier = Modifier.size(18.dp),
           )
           Text(
-            text = "Добавьте YANDEX_MAPKIT_API_KEY в панель Secrets для загрузки тайлов и роутинга.",
+            text =
+              if (!uiState.isMapKitKeyConfigured) {
+                "Добавьте YANDEX_MAPKIT_API_KEY в Secrets для загрузки тайлов карты и роутинга."
+              } else {
+                "Карта не загрузила тайлы (HTTP 403/сеть). Проверьте в кабинете Яндекса тип ключа (MapKit SDK) и пакет: com.aistudio.samokatkz.xmqwkp"
+              },
             style = MaterialTheme.typography.bodySmall,
             color = Color(0xFF16181D),
             fontWeight = FontWeight.Medium,
@@ -394,7 +417,7 @@ private fun PddSpeedLimitBanner(uiState: NavigatorUiState) {
           text = subtitleText,
           style = MaterialTheme.typography.bodySmall,
           color = if (isOverLimit) HazardCrimson else MaterialTheme.colorScheme.onSurfaceVariant,
-          maxLines = 1,
+          maxLines = 2,
           overflow = TextOverflow.Ellipsis,
         )
       }

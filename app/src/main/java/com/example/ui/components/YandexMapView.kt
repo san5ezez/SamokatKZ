@@ -28,7 +28,9 @@ import com.yandex.mapkit.map.CameraUpdateReason
 import com.yandex.mapkit.map.IconStyle
 import com.yandex.mapkit.map.InputListener
 import com.yandex.mapkit.map.Map
+import com.yandex.mapkit.map.MapLoadedListener
 import com.yandex.mapkit.map.MapObjectTapListener
+import com.yandex.mapkit.map.MapType
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.traffic.TrafficLayer
 import com.yandex.mapkit.user_location.UserLocationLayer
@@ -42,6 +44,7 @@ fun YandexMapView(
   onMapLongTap: (Point) -> Unit,
   onVisibleRegionChanged: (BoundingBox) -> Unit,
   onRouteTapped: (String) -> Unit,
+  onMapTilesLoaded: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   val context = LocalContext.current
@@ -50,6 +53,7 @@ fun YandexMapView(
   val currentOnLongTap by rememberUpdatedState(onMapLongTap)
   val currentOnVisibleRegion by rememberUpdatedState(onVisibleRegionChanged)
   val currentOnRouteTapped by rememberUpdatedState(onRouteTapped)
+  val currentOnMapTilesLoaded by rememberUpdatedState(onMapTilesLoaded)
 
   val mapView = remember { MapView(context) }
   var trafficLayer by remember { mutableStateOf<TrafficLayer?>(null) }
@@ -102,11 +106,20 @@ fun YandexMapView(
     }
   }
 
+  val mapLoadedListener = remember {
+    MapLoadedListener { stats ->
+      if (stats.curZoomGeometryLoaded > 0L || stats.fullyLoaded > 0L || stats.fullyAppeared > 0L) {
+        currentOnMapTilesLoaded()
+      }
+    }
+  }
+
   val originPinBitmap = remember { MapBitmapUtils.createOriginScooterPin(context) }
   val destPinBitmap = remember { MapBitmapUtils.createDestinationPin(context) }
 
   DisposableEffect(lifecycleOwner, mapView) {
     val map = mapView.mapWindow.map
+    map.mapType = MapType.VECTOR_MAP
     map.move(
       CameraPosition(NavigatorUiState.ALMATY_CENTER, 13.8f, 0.0f, 0.0f),
       Animation(Animation.Type.SMOOTH, 0.4f),
@@ -114,27 +127,41 @@ fun YandexMapView(
     )
     map.addInputListener(WeakReference(inputListener))
     map.addCameraListener(WeakReference(cameraListener))
+    map.setMapLoadedListener(WeakReference(mapLoadedListener))
 
     runCatching {
       val mk = MapKitFactory.getInstance()
       trafficLayer = mk.createTrafficLayer(mapView.mapWindow)
-      userLocationLayer = mk.createUserLocationLayer(mapView.mapWindow)
+      userLocationLayer = mk.createUserLocationLayer(mapView.mapWindow).apply {
+        isHeadingModeActive = true
+      }
+    }
+
+    var isViewStarted = false
+    fun startMap() {
+      if (!isViewStarted) {
+        runCatching {
+          MapKitFactory.getInstance().onStart()
+          mapView.onStart()
+        }
+        isViewStarted = true
+      }
+    }
+    fun stopMap() {
+      if (isViewStarted) {
+        runCatching { mapView.onStop() }
+        isViewStarted = false
+      }
+    }
+
+    if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+      startMap()
     }
 
     val observer = LifecycleEventObserver { _, event ->
       when (event) {
-        Lifecycle.Event.ON_START -> {
-          runCatching {
-            MapKitFactory.getInstance().onStart()
-            mapView.onStart()
-          }
-        }
-        Lifecycle.Event.ON_STOP -> {
-          runCatching {
-            mapView.onStop()
-            MapKitFactory.getInstance().onStop()
-          }
-        }
+        Lifecycle.Event.ON_START -> startMap()
+        Lifecycle.Event.ON_STOP -> stopMap()
         else -> Unit
       }
     }
@@ -144,10 +171,8 @@ fun YandexMapView(
       lifecycleOwner.lifecycle.removeObserver(observer)
       map.removeInputListener(WeakReference(inputListener))
       map.removeCameraListener(WeakReference(cameraListener))
-      runCatching {
-        mapView.onStop()
-        MapKitFactory.getInstance().onStop()
-      }
+      map.setMapLoadedListener(null)
+      stopMap()
     }
   }
 
@@ -281,14 +306,16 @@ fun YandexMapView(
       }
     }
 
-    // 4. Origin scooter marker
-    val originMark = mapObjects.addPlacemark()
-    originMark.geometry = uiState.originPoint
-    originMark.zIndex = 7f
-    originMark.setIcon(
-      ImageProvider.fromBitmap(originPinBitmap),
-      IconStyle().setAnchor(android.graphics.PointF(0.5f, 0.5f)),
-    )
+    // 4. Origin scooter marker (только если GPS/UserLocationLayer отключён, чтобы не дублировать стрелку)
+    if (!uiState.locationPermissionGranted) {
+      val originMark = mapObjects.addPlacemark()
+      originMark.geometry = uiState.originPoint
+      originMark.zIndex = 7f
+      originMark.setIcon(
+        ImageProvider.fromBitmap(originPinBitmap),
+        IconStyle().setAnchor(android.graphics.PointF(0.5f, 0.5f)),
+      )
+    }
 
     // 5. Destination marker
     uiState.destinationPoint?.let { dest ->

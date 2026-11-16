@@ -12,6 +12,7 @@ import com.example.model.ThemePreference
 import com.example.ui.NavigatorScreen
 import com.example.ui.theme.SamokatTheme
 import com.example.viewmodel.NavigatorViewModel
+import com.yandex.mapkit.MapKitFactory
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,5 +37,15 @@ class MainActivity : ComponentActivity() {
         )
       }
     }
+  }
+
+  override fun onStart() {
+    super.onStart()
+    runCatching { MapKitFactory.getInstance().onStart() }
+  }
+
+  override fun onStop() {
+    runCatching { MapKitFactory.getInstance().onStop() }
+    super.onStop()
   }
 }
