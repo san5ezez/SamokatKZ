@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">SamokatKZ</string>
+    <string name="search_hint">Куда поедем на самокате?</string>
+    <string name="clear_search_cd">Очистить поиск</string>
+    <string name="my_location_cd">Моё местоположение</string>
+    <string name="layers_cd">Слои и тема карты</string>
+    <string name="zoom_in_cd">Приблизить карту</string>
+    <string name="zoom_out_cd">Отдалить карту</string>
+    <string name="mode_full_legal">Фулл Легал (&lt;18)</string>
+    <string name="mode_semi_legal">Полулегальный</string>
+    <string name="mode_full_legal_desc">Только велодорожки и спешивание на разрывах. 0% проезжей части по ПДД РК.</string>
+    <string name="mode_semi_legal_desc">Связки между велодорожками через тротуары (до 6 км/ч) без длинных объездов.</string>
+    <string name="speed_limit_bike_lane">Лимит 25 км/ч · Велодорожка</string>
+    <string name="speed_limit_pedestrian">Лимит 6 км/ч · Тротуар / Спешиться</string>
+    <string name="pdd_helmet_warning">ПДД РК: до 18 лет — без выезда на проезжую часть. На переходе спешивайтесь.</string>
+    <string name="layers_title">Слои и оформление</string>
+    <string name="layer_traffic">Пробки Яндекс</string>
+    <string name="layer_road_events">ДТП и перекрытия</string>
+    <string name="theme_system">Авто</string>
+    <string name="theme_day">День</string>
+    <string name="theme_night">Ночь</string>
+    <string name="elevation_title">Профиль перепада высот</string>
+    <string name="routes_title">Варианты маршрута</string>
+    <string name="detour_avoid_hazards">Объезд опасных участков и пробок</string>
+    <string name="empty_route_hint">Выберите точку на карте долгим нажатием или введите адрес сверху</string>
+    <string name="start_navigation">Поехали</string>
+    <string name="stop_navigation">Завершить</string>
+</resources>

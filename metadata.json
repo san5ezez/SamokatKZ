@@ -1,0 +1,6 @@
+{
+  "name": "SamokatKZ",
+  "description": "Навигатор для электросамокатов с учётом ПДД РК, велодорожек, профиля высот и пробок Яндекс Карт",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
